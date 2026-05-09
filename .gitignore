@@ -1,0 +1,10 @@
+server.out.log
+server.err.log
+data.js
+data_attrs.js
+data_compact.js
+*.tmp
+*.bak
+Api.txt
+.DS_Store
+Thumbs.db

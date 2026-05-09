@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Newark Parcel Intelligence — Living Cities</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+
+    <!-- ═══════════════════════════════════════════════════
+         LOGIN SCREEN
+    ════════════════════════════════════════════════════ -->
+    <section class="login-screen" id="loginScreen">
+      <div class="login-bg" aria-hidden="true">
+        <div class="login-bg-grid"></div>
+        <div class="login-bg-glow login-bg-glow--1"></div>
+        <div class="login-bg-glow login-bg-glow--2"></div>
+        <div class="login-bg-glow login-bg-glow--3"></div>
+        <div class="login-scan"></div>
+        <canvas class="login-particles" id="loginParticles"></canvas>
+      </div>
+
+      <div class="login-visual">
+        <div class="login-badge">
+          <div class="login-badge-dot"></div>
+          <span>Living Cities · Newark City Parcel Project</span>
+        </div>
+        <div class="login-logo-wrap">
+          <div class="login-logo-ring"></div>
+          <div class="login-logo">
+            <img src="https://media.licdn.com/dms/image/v2/D4E0BAQFxFEbQnMyvUA/company-logo_200_200/B4EZbPZusMHoAM-/0/1747236351571/living_cities_logo?e=2147483647&v=beta&t=IlYbc01njHdHRel9QMMx6YAmTpvRnOw7LxwKG1daIvU" alt="Living Cities" />
+          </div>
+        </div>
+        <h1 class="login-headline">Newark City<br /><em>Parcel Intelligence</em></h1>
+        <p class="login-subhead">Advanced parcel analytics for vacancy detection, ownership profiling, LBCS classification, and coordinated development intelligence across 41,000+ parcels.</p>
+        <div class="login-stats">
+          <div class="login-stat">
+            <strong>41,636</strong><span>Total Parcels</span>
+          </div>
+          <div class="login-stat-divider"></div>
+          <div class="login-stat">
+            <strong>Regrid-First</strong><span>Data Source</span>
+          </div>
+          <div class="login-stat-divider"></div>
+          <div class="login-stat">
+            <strong>Live AI</strong><span>Parcel Assistant</span>
+          </div>
+        </div>
+        <div class="login-credits">
+          <div class="login-credit-item">
+            <span>Director, Centre of Wealth</span>
+            <strong>Dr. Ahmed Whitt</strong>
+          </div>
+          <div class="login-credit-item">
+            <span>Data Analyst Consultant</span>
+            <strong>Abdul Baseer Shaik</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-card">
+        <div class="login-card-inner">
+          <div class="login-card-glow" aria-hidden="true"></div>
+          <div class="login-form-header">
+            <span class="login-eyebrow">Secure Access Portal</span>
+            <h2>Access Parcel Intelligence</h2>
+            <p>This dashboard operates entirely in your browser. No data is transmitted externally.</p>
+          </div>
+          <div class="login-fields">
+            <label class="login-field">
+              <span>User Name</span>
+              <div class="login-input-wrap">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <input id="loginName" value="Living Cities" readonly />
+                <div class="login-input-verified">
+                  <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                </div>
+              </div>
+            </label>
+            <label class="login-field">
+              <span>Project Password</span>
+              <div class="login-input-wrap">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input id="loginPassword" type="password" placeholder="Enter project password" autocomplete="current-password" />
+                <button class="login-pw-toggle" type="button" id="pwToggle" aria-label="Toggle password visibility">
+                  <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </label>
+          </div>
+          <div class="login-error" id="loginError" role="alert"></div>
+          <button id="enterDashboard" type="button" class="login-btn">
+            <span>Enter Dashboard</span>
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <div class="login-footnote">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Local session only · No external API key required · Regrid-first parcel analysis</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         MAIN APP
+    ════════════════════════════════════════════════════ -->
+    <div class="app" id="app">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-brand">
+          <div class="topbar-logo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2 3 6.5v11L12 22l9-4.5v-11L12 2Z"/>
+              <path d="M12 7v10M7.5 9.25l9 5.5M16.5 9.25l-9 5.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="topbar-title">Newark Parcel Intelligence</div>
+            <div class="topbar-sub">Living Cities · Regrid-First Analytics · LBCS + Census Enriched</div>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <div class="topbar-pill">
+            <span class="live-dot"></span>
+            <span id="sourceCount">Loading parcels…</span>
+          </div>
+          <div class="topbar-pill topbar-pill--warn" id="methodChip">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+            Rows without Regrid ID, path, or owner are hidden
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="btn-ghost" id="cmdPaletteToggle" type="button" title="Open filter command palette (⌘K)">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg>
+            Filters
+            <kbd>⌘K</kbd>
+          </button>
+          <button class="btn-primary" id="exportCsv" type="button">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </header>
+
+      <!-- TAB BAR -->
+      <nav class="tabbar" aria-label="Dashboard views">
+        <button class="tab on" data-tab="map" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z"/></svg>
+          <span>Parcel Map</span>
+          <span class="tab-count" id="mapTabCount">—</span>
+        </button>
+        <button class="tab" data-tab="charts" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16V9M13 16V6M18 16v-4"/></svg>
+          <span>Analytics</span>
+        </button>
+        <button class="tab" data-tab="insights" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>Key Findings</span>
+        </button>
+        <button class="tab" data-tab="docs" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+          <span>Documentation</span>
+        </button>
+        <button class="tab" data-tab="data" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          <span>Data Explorer</span>
+          <span class="tab-count" id="dataTabCount">—</span>
+        </button>
+        <button class="tab tab--dev" data-tab="dev" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>SQL Dev</span>
+        </button>
+
+        <div class="tabbar-spacer"></div>
+
+        <div class="tabbar-status">
+          <span class="live-dot"></span>
+          <span id="statusText">Initializing dashboard…</span>
+        </div>
+      </nav>
+
+      <!-- COMMAND PALETTE OVERLAY -->
+      <div class="cmd-overlay gone" id="cmdOverlay">
+        <div class="cmd-backdrop" id="cmdBackdrop"></div>
+        <div class="cmd-palette" id="cmdPalette">
+          <div class="cmd-header">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="cmdSearch" type="text" placeholder="Search parcels, filter by owner, address, zone…" autocomplete="off" />
+          <!-- app.js listens on #searchInput — alias to cmd search -->
+          <input id="searchInput" type="hidden" />
+            <button class="cmd-close" id="cmdClose" type="button">
+              <kbd>Esc</kbd>
+            </button>
+          </div>
+          <div class="cmd-sections">
+            <div class="cmd-section">
+              <div class="cmd-section-label">Status Filter</div>
+              <div class="cmd-pills" id="cmdStatusPills">
+                <button class="cmd-pill on all" data-filter="status" data-value="All" type="button">All Parcels</button>
+                <button class="cmd-pill vacant" data-filter="status" data-value="Vacant Group" type="button">
+                  <span class="cmd-pill-dot" style="background:#c0334e"></span>Vacant
+                </button>
+                <button class="cmd-pill under" data-filter="status" data-value="Likely underutilized" type="button">
+                  <span class="cmd-pill-dot" style="background:#e09a3e"></span>Underutilized
+                </button>
+                <button class="cmd-pill good" data-filter="status" data-value="Occupied / active" type="button">
+                  <span class="cmd-pill-dot" style="background:#0a8f60"></span>Active
+                </button>
+              </div>
+            </div>
+            <div class="cmd-section">
+              <div class="cmd-section-label">Ownership Filter</div>
+              <div class="cmd-pills" id="cmdOwnerPills">
+                <button class="cmd-pill on all" data-filter="ownership" data-value="All" type="button">All Owners</button>
+                <button class="cmd-pill" data-filter="ownership" data-value="Public" type="button">Public</button>
+                <button class="cmd-pill" data-filter="ownership" data-value="Private" type="button">Private</button>
+                <button class="cmd-pill" data-filter="ownership" data-value="Nonprofit" type="button">Nonprofit</button>
+              </div>
+            </div>
+            <div class="cmd-section cmd-section--row">
+              <div class="cmd-section-col">
+                <div class="cmd-section-label">Geography</div>
+                <div class="multi-select" data-menu="geo">
+                  <button class="cmd-dropdown-btn" id="geoMenuButton" type="button">
+                    <span id="geoMenuLabel">All Areas</span>
+                    <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="multi-menu gone" id="geoMenu"></div>
+                </div>
+              </div>
+              <div class="cmd-section-col">
+                <div class="cmd-section-label">Zoning</div>
+                <div class="multi-select" data-menu="zoning">
+                  <button class="cmd-dropdown-btn" id="zoningMenuButton" type="button">
+                    <span id="zoningMenuLabel">All Zoning</span>
+                    <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="multi-menu gone" id="zoningMenu"></div>
+                </div>
+              </div>
+            </div>
+            <div class="cmd-section">
+              <div class="cmd-section-label">Opportunity Score Range <strong id="scoreRangeLabel">0 – 100</strong></div>
+              <div class="cmd-range-track">
+                <input id="scoreMin" type="range" min="0" max="100" value="0" />
+                <input id="scoreMax" type="range" min="0" max="100" value="100" />
+              </div>
+            </div>
+            <div class="cmd-section">
+              <div class="cmd-section-label">Land Value Range <strong id="landRangeLabel">All</strong></div>
+              <div class="cmd-range-track">
+                <input id="landMin" type="range" min="0" value="0" />
+                <input id="landMax" type="range" min="0" value="0" />
+              </div>
+            </div>
+            <div class="cmd-section">
+              <div class="cmd-section-label">Improvement Value <strong id="improvementRangeLabel">All</strong></div>
+              <div class="cmd-range-track">
+                <input id="improvementMin" type="range" min="0" value="0" />
+                <input id="improvementMax" type="range" min="0" value="0" />
+              </div>
+            </div>
+          </div>
+          <div class="cmd-footer">
+            <div class="cmd-result-count"><span id="cmdResultCount">—</span> parcels match</div>
+            <button class="cmd-reset" id="resetFilters" type="button">
+              <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Reset All
+            </button>
+            <button class="btn-primary cmd-apply" id="cmdApply" type="button">Apply Filters</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN WORKSPACE -->
+      <main class="workspace">
+
+        <!-- ─── MAP VIEW ─── -->
+        <section class="view view-map" id="view-map">
+          <aside class="sidebar" id="sidebar">
+            <div class="sidebar-head">
+              <div class="sidebar-head-label">
+                <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Filtered Portfolio
+              </div>
+              <strong class="sidebar-head-count" id="sidebarCount">—</strong>
+            </div>
+
+            <div class="kpi-grid">
+              <article class="mini-kpi mini-kpi--vac">
+                <div class="mini-kpi-icon">
+                  <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                </div>
+                <span>Vacant / Under</span>
+                <strong id="kVacant">—</strong>
+                <small id="kVacantPct">—</small>
+              </article>
+              <article class="mini-kpi mini-kpi--val">
+                <div class="mini-kpi-icon">
+                  <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <span>Assessed Value</span>
+                <strong id="kValue">—</strong>
+                <small id="kMedian">—</small>
+              </article>
+              <article class="mini-kpi mini-kpi--land">
+                <div class="mini-kpi-icon">
+                  <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </div>
+                <span>Land Value</span>
+                <strong id="kLandValue">—</strong>
+                <small>Regrid landval</small>
+              </article>
+              <article class="mini-kpi mini-kpi--imp">
+                <div class="mini-kpi-icon">
+                  <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <span>Improved Value</span>
+                <strong id="kImprovedValue">—</strong>
+                <small>Regrid improvval</small>
+              </article>
+            </div>
+
+            <div class="side-section">
+              <div class="section-title">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Ownership Mix
+              </div>
+              <div id="ownershipBars"></div>
+            </div>
+
+            <div class="side-section">
+              <div class="section-title">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                Land Use Leaders
+              </div>
+              <div id="landUseBars"></div>
+            </div>
+
+            <div class="side-section">
+              <div class="section-title">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                LBCS Function
+              </div>
+              <div id="lbcsBars"></div>
+            </div>
+
+            <div class="side-section">
+              <div class="section-title">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                High Opportunity Parcels
+              </div>
+              <div class="selection-actions">
+                <button id="exportSelected" type="button" class="sel-btn">
+                  <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+                  Export Selected
+                </button>
+                <button id="clearSelected" type="button" class="sel-btn sel-btn--ghost">
+                  <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  Clear
+                </button>
+              </div>
+              <div id="parcelList" class="parcel-list"></div>
+            </div>
+
+            <div class="side-section method-card">
+              <div class="method-card-title">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Classification Logic
+              </div>
+              <p><strong>Vacant</strong> — county IMPRVT_VAL equals 0</p>
+              <p><strong>Underutilized</strong> — IMPRVT_VAL &gt; 0 and ≤ 20% of LAND_VAL</p>
+              <p><strong>Primary values</strong> use Regrid fields first: owner, parcel number, path, land and improvement value, zoning, LBCS, lat/lng, and census attributes.</p>
+            </div>
+          </aside>
+
+          <section class="map-panel">
+            <div id="map"></div>
+            <div class="map-loading" id="mapLoading">
+              <div class="map-loading-inner">
+                <div class="spinner"></div>
+                <div class="loading-title">Rendering Newark Parcel Polygons</div>
+                <div class="loading-sub">Filtering and drawing source geometries</div>
+              </div>
+            </div>
+
+            <!-- Map overlay stats -->
+            <div class="map-stats">
+              <div class="map-stat">
+                <span>Parcels</span>
+                <strong id="mParcels">—</strong>
+              </div>
+              <div class="map-stat map-stat--red">
+                <span>Vacant / Under</span>
+                <strong id="mVacant">—</strong>
+              </div>
+              <div class="map-stat map-stat--purple">
+                <span>Avg Score</span>
+                <strong id="mScore">—</strong>
+              </div>
+            </div>
+
+            <!-- Layer switcher -->
+            <div class="layer-card">
+              <div class="layer-card-label">Map View</div>
+              <div class="layer-options">
+                <button class="layer-option active" data-layer="light" type="button">Light</button>
+                <button class="layer-option" data-layer="dark" type="button">Dark</button>
+                <button class="layer-option" data-layer="satellite" type="button">Satellite</button>
+                <button class="layer-option" data-layer="streets" type="button">Streets</button>
+                <button class="layer-option" data-layer="topo" type="button">Topo</button>
+              </div>
+            </div>
+
+            <!-- Map controls -->
+            <div class="map-controls">
+              <button id="zoomIn" type="button" title="Zoom in">
+                <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <button id="zoomOut" type="button" title="Zoom out">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+              </button>
+              <button id="fitMap" type="button" title="Fit to parcels">
+                <svg viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              </button>
+              <button id="clusterToggle" type="button" class="on" title="Toggle clusters">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="m13.41 10.59 4.17-4.17M10.59 13.41l-4.17 4.17"/></svg>
+              </button>
+            </div>
+
+            <!-- Legend -->
+            <div class="map-legend" id="legend"></div>
+          </section>
+        </section>
+
+        <!-- ─── ANALYTICS VIEW ─── -->
+        <section class="view view-charts gone" id="view-charts">
+          <div class="analytics-header">
+            <div>
+              <h2>Parcel Analytics Dashboard</h2>
+              <p>Real-time analysis of the current filtered parcel set. Double-click any chart element to drill down.</p>
+            </div>
+          </div>
+
+          <div class="kpi-row">
+            <article class="big-kpi">
+              <div class="big-kpi-icon big-kpi-icon--blue">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              </div>
+              <span>Filtered Parcels</span>
+              <strong id="cParcels">—</strong>
+              <small id="cShare">—</small>
+            </article>
+            <article class="big-kpi big-kpi--vac">
+              <div class="big-kpi-icon big-kpi-icon--red">
+                <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              </div>
+              <span>Vacant</span>
+              <strong id="cVacantOnly">—</strong>
+              <small>county IMPRVT_VAL = 0</small>
+            </article>
+            <article class="big-kpi big-kpi--under">
+              <div class="big-kpi-icon big-kpi-icon--amber">
+                <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <span>Underutilized</span>
+              <strong id="cUnderOnly">—</strong>
+              <small>IMPRVT_VAL ≤ 20% land val</small>
+            </article>
+            <article class="big-kpi big-kpi--opp">
+              <div class="big-kpi-icon big-kpi-icon--indigo">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <span>Opportunity</span>
+              <strong id="cOpportunity">—</strong>
+              <small>vacant + underutilized</small>
+            </article>
+            <article class="big-kpi">
+              <div class="big-kpi-icon big-kpi-icon--green">
+                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span>Total Assessed Value</span>
+              <strong id="cValue">—</strong>
+              <small>cumulative assessed</small>
+            </article>
+          </div>
+
+          <div class="analytics-board">
+            <article class="chart-card status-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Utilization Status</h3>
+                  <p>County LAND_VAL / IMPRVT_VAL rule</p>
+                </div>
+                <span class="chart-badge">County Fields</span>
+              </div>
+              <div class="donut-layout">
+                <canvas id="statusChart"></canvas>
+                <div class="status-legend" id="statusLegend"></div>
+              </div>
+            </article>
+
+            <article class="chart-card landuse-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Land Use by Classification</h3>
+                  <p>Regrid-first parcel set with LBCS context</p>
+                </div>
+                <span class="chart-badge">Real Field</span>
+              </div>
+              <div id="landUseProgress" class="progress-chart"></div>
+            </article>
+
+            <article class="chart-card owner-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Inferred Ownership</h3>
+                  <p>Derived from REGRID_owner + LBCS descriptors</p>
+                </div>
+                <span class="chart-badge">Inferred</span>
+              </div>
+              <canvas id="ownershipChart"></canvas>
+              <div class="note-pill">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                Not a direct field — confidence retained per parcel
+              </div>
+            </article>
+
+            <article class="chart-card matrix-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Vacancy × LBCS Function</h3>
+                  <p>Where vacancy concentrates by land-based classification</p>
+                </div>
+                <span class="chart-badge">Cross-Tab</span>
+              </div>
+              <canvas id="matrixChart"></canvas>
+            </article>
+
+            <article class="chart-card zcta-card">
+              <div class="chart-head">
+                <div>
+                  <h3>ZCTA Distribution</h3>
+                  <p>Census ZIP Code Tabulation Areas for visible parcels</p>
+                </div>
+                <span class="chart-badge">Census</span>
+              </div>
+              <div id="zctaTreemap" class="treemap"></div>
+            </article>
+
+            <article class="chart-card radar-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Ward Opportunity Profile</h3>
+                  <p>Vacant + underutilized intensity by inferred geography</p>
+                </div>
+                <span class="chart-badge">Dynamic</span>
+              </div>
+              <canvas id="profileChart"></canvas>
+            </article>
+
+            <article class="chart-card scatter-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Value vs. Improvement Ratio</h3>
+                  <p>LAND_VAL vs IMPRVT_VAL utilization signal</p>
+                </div>
+                <span class="chart-badge">Formula</span>
+              </div>
+              <canvas id="scatterChart"></canvas>
+            </article>
+
+            <article class="chart-card value-card">
+              <div class="chart-head">
+                <div>
+                  <h3>Land vs. Improvement Value Split</h3>
+                  <p>Regrid value breakdown across visible parcels</p>
+                </div>
+                <span class="chart-badge">Value</span>
+              </div>
+              <canvas id="valueSplitChart"></canvas>
+            </article>
+          </div>
+        </section>
+
+        <!-- ─── KEY FINDINGS VIEW ─── -->
+        <section class="view view-insights gone" id="view-insights">
+          <div class="insights-header">
+            <div class="insights-header-text">
+              <h2>Key Findings &amp; Intelligence</h2>
+              <p>Dynamic insights derived from the currently filtered parcel dataset. Findings update as filters change.</p>
+            </div>
+            <div class="insights-credit">
+              <div class="credit-person">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div>
+                  <span>Director, Centre of Wealth</span>
+                  <strong>Dr. Ahmed Whitt</strong>
+                </div>
+              </div>
+              <div class="credit-person">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div>
+                  <span>Data Analyst Consultant</span>
+                  <strong>Abdul Baseer Shaik</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="insights-grid">
+            <article class="insight insight--danger">
+              <div class="insight-tag">Concentration</div>
+              <h3>Where are vacant or underutilized parcels concentrated?</h3>
+              <strong id="iVacant">—</strong>
+              <p id="iVacantText">—</p>
+            </article>
+            <article class="insight insight--info">
+              <div class="insight-tag">Assemblage</div>
+              <h3>Which clusters could support coordinated development?</h3>
+              <strong id="iClusters">—</strong>
+              <p id="iClusterText">—</p>
+            </article>
+            <article class="insight insight--good">
+              <div class="insight-tag">Ownership</div>
+              <h3>What types of ownership dominate these parcels?</h3>
+              <strong id="iOwnership">—</strong>
+              <p id="iOwnershipText">—</p>
+            </article>
+            <article class="insight insight--warn">
+              <div class="insight-tag">Zoning</div>
+              <h3>Which zoning categories shape development opportunity?</h3>
+              <strong id="iZoning">—</strong>
+              <p id="iZoningText">—</p>
+            </article>
+            <article class="insight insight--formula">
+              <div class="insight-tag">Definitions</div>
+              <h3>Vacant and underutilized classification rule</h3>
+              <p><strong>Vacant</strong> means county IMPRVT_VAL is 0. <strong>Likely underutilized</strong> means county IMPRVT_VAL is greater than 0 but ≤ 20% of county LAND_VAL. <strong>Active</strong> means improvement value exceeds that threshold.</p>
+            </article>
+            <article class="insight insight--formula">
+              <div class="insight-tag">Method</div>
+              <h3>Opportunity score and cluster formation</h3>
+              <p>Score weights vacancy or underutilization, lot size, low improvement value, lower assessed value, civic/nonprofit ownership, and QOZ status. Clusters group high-score parcels by nearby centroid grid cells, then size markers by parcel count.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ─── DOCUMENTATION VIEW ─── -->
+        <section class="view view-docs gone" id="view-docs">
+          <div class="doc-hero">
+            <div class="doc-hero-content">
+              <span class="doc-hero-eyebrow">Operations Manual</span>
+              <h2>How to Use the Newark Parcel Dashboard</h2>
+              <p>A complete guide covering filtering, parcel classification logic, map operations, selection tools, AI assistant capabilities, and data export options.</p>
+            </div>
+            <div class="doc-hero-graphic" aria-hidden="true">
+              <svg viewBox="0 0 120 80" fill="none">
+                <rect x="10" y="10" width="100" height="60" rx="8" stroke="rgba(99,102,241,0.4)" stroke-width="1.5"/>
+                <rect x="20" y="20" width="35" height="4" rx="2" fill="rgba(99,102,241,0.5)"/>
+                <rect x="20" y="28" width="55" height="3" rx="1.5" fill="rgba(99,102,241,0.3)"/>
+                <rect x="20" y="34" width="45" height="3" rx="1.5" fill="rgba(99,102,241,0.3)"/>
+                <rect x="20" y="44" width="20" height="20" rx="3" fill="rgba(16,185,129,0.3)" stroke="rgba(16,185,129,0.5)" stroke-width="1"/>
+                <rect x="44" y="44" width="20" height="20" rx="3" fill="rgba(192,51,78,0.3)" stroke="rgba(192,51,78,0.5)" stroke-width="1"/>
+                <rect x="68" y="44" width="20" height="20" rx="3" fill="rgba(99,102,241,0.3)" stroke="rgba(99,102,241,0.5)" stroke-width="1"/>
+              </svg>
+            </div>
+          </div>
+          <div class="doc-grid">
+            <article class="doc-card">
+              <div class="doc-card-num">01</div>
+              <h3>Start With the Command Palette</h3>
+              <p>Press <kbd>⌘K</kbd> or click Filters in the top bar to open the command palette. Use status, ownership, geography, zoning, and value range controls to narrow the visible parcel universe. All KPIs, charts, and the map update instantly.</p>
+            </article>
+            <article class="doc-card">
+              <div class="doc-card-num">02</div>
+              <h3>Understand Utilization Status</h3>
+              <p>Vacant means county IMPRVT_VAL is 0. Underutilized means IMPRVT_VAL is greater than 0 and ≤ 20% of LAND_VAL. Active parcels exceed that ratio. These are derived from county assessment data, not Regrid USPS vacancy flags.</p>
+            </article>
+            <article class="doc-card">
+              <div class="doc-card-num">03</div>
+              <h3>Navigate the Map</h3>
+              <p>Click any parcel polygon to open the detail popup. Use "Full record" to inspect every available field. Toggle clusters (C button) to see assemblage opportunities. At low zoom, fast point rendering is used — zoom in for full polygons.</p>
+            </article>
+            <article class="doc-card">
+              <div class="doc-card-num">04</div>
+              <h3>Select and Track Parcels</h3>
+              <p>Check the box beside any high-opportunity parcel in the sidebar list, or use the "Select" button in the popup. Selected parcels persist across filter changes and can be exported independently from the full filtered set.</p>
+            </article>
+            <article class="doc-card">
+              <div class="doc-card-num">05</div>
+              <h3>Export and Report</h3>
+              <p>Export all visible parcels as CSV, export only selected parcels, generate a JSON data package, or produce a full HTML report with KPIs, opportunity tables, and current filter conditions. Use the Export dock that appears when parcels are selected.</p>
+            </article>
+            <article class="doc-card">
+              <div class="doc-card-num">06</div>
+              <h3>Use the AI Parcel Assistant</h3>
+              <p>Click the AI button to open the intelligent assistant. Ask questions in plain English: "how many vacant parcels?", "show R-3 parcels", "ownership breakdown", "report for nonprofit". The assistant reads the live dataset and answers deterministically — no API key needed.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ─── DATA EXPLORER VIEW ─── -->
+        <section class="view view-data gone" id="view-data">
+          <div class="dev-header">
+            <div>
+              <h2>Data Explorer</h2>
+              <p id="dataExplorerSub">Browse, sort and export the current filtered parcel dataset.</p>
+            </div>
+            <div class="dev-header-actions">
+              <button class="btn-ghost" id="dataColToggle" type="button">
+                <svg viewBox="0 0 24 24"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg>
+                Columns
+              </button>
+              <button class="btn-ghost" id="dataExportPage" type="button">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+                Export Page
+              </button>
+              <button class="btn-primary" id="dataExportAll" type="button">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+                Export All Filtered
+              </button>
+            </div>
+          </div>
+          <!-- Column selector dropdown -->
+          <div class="col-selector-panel gone" id="colSelectorPanel"></div>
+          <!-- Table -->
+          <div class="data-table-wrap">
+            <table class="data-table" id="dataTable">
+              <thead id="dataTableHead"></thead>
+              <tbody id="dataTableBody"></tbody>
+            </table>
+            <div class="data-empty gone" id="dataEmpty">
+              <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <p>No parcels match the current filters</p>
+            </div>
+          </div>
+          <!-- Pagination -->
+          <div class="data-pagination" id="dataPagination">
+            <button class="pag-btn" id="pagFirst" type="button">«</button>
+            <button class="pag-btn" id="pagPrev" type="button">‹</button>
+            <div class="pag-pages" id="pagPages"></div>
+            <button class="pag-btn" id="pagNext" type="button">›</button>
+            <button class="pag-btn" id="pagLast" type="button">»</button>
+            <div class="pag-info" id="pagInfo"></div>
+            <select class="pag-size" id="pagSize">
+              <option value="25">25 / page</option>
+              <option value="50" selected>50 / page</option>
+              <option value="100">100 / page</option>
+              <option value="250">250 / page</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- ─── SQL DEVELOPER VIEW ─── -->
+        <section class="view view-dev gone" id="view-dev">
+          <div class="dev-header">
+            <div>
+              <h2>SQL Developer Console</h2>
+              <p>Query the live parcel dataset with field conditions. Results apply instantly across all dashboard views.</p>
+            </div>
+            <div class="dev-header-actions">
+              <button class="btn-ghost" id="sqlClear" type="button">
+                <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                Clear
+              </button>
+              <button class="btn-ghost" id="sqlReset" type="button">
+                <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Reset All
+              </button>
+              <button class="btn-primary" id="sqlRun" type="button">
+                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Run Query
+              </button>
+            </div>
+          </div>
+
+          <div class="sql-layout">
+            <!-- Left: query builder -->
+            <div class="sql-panel">
+              <div class="sql-panel-head">
+                <div class="sql-panel-title">
+                  <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Query Builder
+                </div>
+                <div class="sql-mode-toggle">
+                  <button class="sql-mode-btn active" id="sqlModeVisual" type="button">Visual</button>
+                  <button class="sql-mode-btn" id="sqlModeRaw" type="button">Raw SQL</button>
+                </div>
+              </div>
+
+              <!-- Visual query builder -->
+              <div id="sqlVisualMode">
+                <div class="sql-select-row">
+                  <span class="sql-keyword">SELECT</span>
+                  <span class="sql-text">* FROM parcels</span>
+                </div>
+                <div class="sql-where-label">
+                  <span class="sql-keyword">WHERE</span>
+                  <button class="sql-add-condition" id="sqlAddCondition" type="button">
+                    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    Add Condition
+                  </button>
+                </div>
+                <div id="sqlConditions" class="sql-conditions"></div>
+                <div class="sql-order-row">
+                  <span class="sql-keyword">ORDER BY</span>
+                  <select id="sqlOrderField" class="sql-select-ctrl">
+                    <option value="">— none —</option>
+                  </select>
+                  <select id="sqlOrderDir" class="sql-select-ctrl" style="width:90px">
+                    <option value="asc">ASC</option>
+                    <option value="desc">DESC</option>
+                  </select>
+                  <span class="sql-keyword">LIMIT</span>
+                  <select id="sqlLimit" class="sql-select-ctrl" style="width:90px">
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                    <option value="5000">5000</option>
+                    <option value="0">All</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Raw SQL editor -->
+              <div id="sqlRawMode" class="gone">
+                <div class="sql-raw-note">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  Pseudo-SQL parsed against parcel fields. Supported: WHERE field = value, AND, OR, &gt;, &lt;, &gt;=, &lt;=, LIKE, IN (a,b,c)
+                </div>
+                <textarea id="sqlRawInput" class="sql-raw-editor" placeholder="SELECT * FROM parcels WHERE vacancy = 'Vacant' AND ownership = 'Public' ORDER BY opportunity DESC LIMIT 500"></textarea>
+              </div>
+
+              <!-- Generated SQL preview -->
+              <div class="sql-preview">
+                <div class="sql-preview-label">Generated Query</div>
+                <pre id="sqlPreview" class="sql-pre">SELECT * FROM parcels -- no conditions</pre>
+              </div>
+            </div>
+
+            <!-- Right: results -->
+            <div class="sql-results-panel">
+              <div class="sql-results-head">
+                <div class="sql-results-title">
+                  <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                  Results
+                  <span class="sql-result-count" id="sqlResultCount">—</span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn-ghost" id="sqlApplyGlobal" type="button" title="Apply this query as the active dashboard filter">
+                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Apply to Dashboard
+                  </button>
+                  <button class="btn-ghost" id="sqlExportResults" type="button">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+              <div class="sql-results-table-wrap">
+                <table class="data-table" id="sqlResultTable">
+                  <thead id="sqlResultHead"></thead>
+                  <tbody id="sqlResultBody"></tbody>
+                </table>
+                <div class="sql-results-empty" id="sqlResultEmpty">
+                  <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  <p>Run a query to see results here</p>
+                </div>
+              </div>
+
+              <!-- Field reference -->
+              <div class="sql-field-ref">
+                <div class="sql-field-ref-title">
+                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+                  Available Fields
+                </div>
+                <div class="sql-field-chips" id="sqlFieldChips"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- STATUS BAR -->
+      <footer class="statusbar">
+        <div class="statusbar-pulse">
+          <span class="live-dot"></span>
+          <strong>Live Portfolio</strong>
+        </div>
+        <div class="statusbar-marquee">
+          <span id="statusTextBottom">Initializing dashboard…</span>
+        </div>
+        <div class="statusbar-chips">
+          <div class="status-chip">
+            <span>Source</span>
+            <strong>Newark Essex Regrid</strong>
+          </div>
+          <div class="status-chip status-chip--accent">
+            <span>Engine</span>
+            <strong>Static Shards + Lazy Geometry</strong>
+          </div>
+        </div>
+      </footer>
+
+    </div><!-- /.app -->
+
+    <!-- ═══════════════════════════════════════════════════
+         PARCEL RECORD MODAL
+    ════════════════════════════════════════════════════ -->
+    <div class="modal-layer gone" id="parcelModal" role="dialog" aria-modal="true" aria-label="Full parcel record">
+      <div class="record-modal">
+        <div class="record-modal-header">
+          <div>
+            <span id="recordParcelId" class="record-parcel-id">Parcel</span>
+            <h2 id="recordTitle">Full Parcel Record</h2>
+          </div>
+          <div class="record-actions">
+            <button id="selectRecordParcel" type="button" class="btn-ghost">Select Parcel</button>
+            <button id="exportSingleParcel" type="button" class="btn-ghost">Export CSV</button>
+            <button id="exportParcelJson" type="button" class="btn-ghost">Export JSON</button>
+            <button class="record-modal-close" id="closeParcelModal" type="button">
+              <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="record-grid" id="recordGrid"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         EXPORT DOCK
+    ════════════════════════════════════════════════════ -->
+    <div class="export-dock" id="exportDock">
+      <div class="export-dock-info">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <strong id="selectedCount">0 selected</strong>
+      </div>
+      <button id="exportVisible" type="button" class="btn-ghost">Export Visible CSV</button>
+      <button id="exportSelectedDock" type="button" class="btn-ghost">Export Selected CSV</button>
+      <button id="exportReport" type="button" class="btn-primary">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Generate Report
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         AI ASSISTANT
+    ════════════════════════════════════════════════════ -->
+    <button class="ai-fab" id="aiLauncher" type="button" title="Open Parcel AI Assistant">
+      <div class="ai-fab-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
+          <circle cx="9" cy="13" r="1" fill="currentColor"/>
+          <circle cx="15" cy="13" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="ai-fab-label">Parcel AI</span>
+      <div class="ai-fab-ring" aria-hidden="true"></div>
+    </button>
+
+    <section class="ai-panel gone" id="aiPanel" aria-label="Parcel AI assistant">
+      <div class="ai-panel-header">
+        <div class="ai-panel-header-left">
+          <div class="ai-panel-avatar">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="ai-panel-name">Parcel AI</div>
+            <div class="ai-panel-status">
+              <span class="live-dot"></span>
+              Dataset assistant · No API key required
+            </div>
+          </div>
+        </div>
+        <div class="ai-panel-header-actions">
+          <button class="ai-panel-close" id="closeAi" type="button">
+            <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI dock controls -->
+      <div class="ai-dock-bar">
+        <span>Position</span>
+        <div class="ai-dock-btns">
+          <button data-ai-dock="top-left" type="button">TL</button>
+          <button data-ai-dock="top-right" type="button">TR</button>
+          <button data-ai-dock="mid-left" type="button">ML</button>
+          <button data-ai-dock="mid-right" type="button">MR</button>
+          <button data-ai-dock="bottom-left" type="button">BL</button>
+          <button data-ai-dock="bottom-right" type="button">BR</button>
+        </div>
+      </div>
+
+      <!-- Suggested prompts -->
+      <div class="ai-suggestions" id="aiSuggestions">
+        <button data-prompt="Summarize the current filtered dataset" type="button">📊 Summarize dataset</button>
+        <button data-prompt="Show vacant parcels" type="button">🏚 Filter vacant</button>
+        <button data-prompt="Which ownership type dominates the current view?" type="button">🏛 Ownership breakdown</button>
+        <button data-prompt="Create a report for the current filtered parcels" type="button">📄 Generate report</button>
+        <button data-prompt="What is the average opportunity score?" type="button">⭐ Avg score</button>
+        <button data-prompt="Show underutilized parcels" type="button">📉 Underutilized</button>
+      </div>
+
+      <!-- Chat messages -->
+      <div class="ai-messages" id="aiMessages">
+        <div class="ai-msg ai-msg--bot">
+          <div class="ai-msg-avatar">
+            <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/></svg>
+          </div>
+          <div class="ai-msg-bubble">
+            <p>Hello! I'm the <strong>Parcel Intelligence Assistant</strong>. I have direct access to all 41,000+ Newark parcel records and can answer questions, apply filters, switch map layers, and generate reports — all from the live dataset.</p>
+            <p style="margin-top:8px">Try asking: <em>"how many vacant parcels are there?"</em> or <em>"show R-3 zoning parcels"</em></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <form class="ai-input-bar" id="aiForm">
+        <div class="ai-input-inner">
+          <input id="aiInput" type="text" placeholder="Ask about parcels, ownership, zoning, reports…" autocomplete="off" />
+          <button type="submit" class="ai-send-btn" id="aiSendBtn">
+            <svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2 15 22 11 13 2 9l20-7z"/></svg>
+          </button>
+        </div>
+      </form>
+      <div class="ai-footer-note" id="aiStatus">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        No-token local assistant · Deterministic answers from loaded parcel dataset
+      </div>
+    </section>
+
+    <!-- SCRIPTS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.3.0/dist/fuse.min.js"></script>
+
+    <!-- ═══ LOADING OVERLAY — injected before data scripts, removed after app init ═══ -->
+    <script>
+    (function(){
+      var style = document.createElement('style');
+      style.textContent = `
+        #dataLoader {
+          position:fixed;inset:0;z-index:99999;
+          display:flex;align-items:center;justify-content:center;
+          background:#080c14;font-family:"DM Sans",ui-sans-serif,system-ui,sans-serif;
+          transition:opacity 0.7s ease,transform 0.7s ease;
+        }
+        #dataLoader.dl-hide{opacity:0;transform:scale(1.04);pointer-events:none;}
+        .dl-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+        .dl-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.1) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 30%,transparent 80%);}
+        .dl-glow{position:absolute;border-radius:50%;filter:blur(80px);}
+        .dl-glow-1{width:600px;height:600px;top:-150px;left:-100px;background:radial-gradient(circle,rgba(99,102,241,0.3),transparent 70%);animation:dlG 7s ease-in-out infinite;}
+        .dl-glow-2{width:500px;height:500px;bottom:-100px;right:-50px;background:radial-gradient(circle,rgba(139,92,246,0.25),transparent 70%);animation:dlG 9s 2s ease-in-out infinite;}
+        @keyframes dlG{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+        .dl-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;width:min(520px,90vw);text-align:center;}
+        .dl-logo{width:76px;height:76px;border-radius:22px;background:white;display:grid;place-items:center;overflow:hidden;padding:8px;box-shadow:0 0 40px rgba(99,102,241,0.45),0 10px 30px rgba(0,0,0,0.5);animation:dlBob 2.8s ease-in-out infinite;}
+        @keyframes dlBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .dl-logo img{width:100%;height:100%;object-fit:contain;}
+        .dl-title{font-family:"Outfit",sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,#818cf8,#8b5cf6,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .dl-sub{color:#64748b;font-size:13px;line-height:1.6;max-width:380px;}
+        .dl-bar-wrap{width:100%;display:flex;align-items:center;gap:12px;}
+        .dl-bar-track{flex:1;height:7px;border-radius:999px;background:#1e2a40;overflow:hidden;position:relative;}
+        .dl-bar-fill{height:100%;border-radius:999px;width:0%;background:linear-gradient(90deg,#6366f1,#8b5cf6,#10b981);transition:width 0.55s cubic-bezier(0.2,0.8,0.2,1);}
+        .dl-bar-track::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);animation:dlSh 1.6s linear infinite;}
+        @keyframes dlSh{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+        .dl-pct{color:#818cf8;font-family:"DM Mono",monospace;font-size:13px;font-weight:700;min-width:38px;text-align:right;}
+        .dl-steps{display:flex;flex-direction:column;gap:9px;width:100%;text-align:left;background:#0c1220;border:1px solid rgba(99,102,241,0.18);border-radius:16px;padding:18px;}
+        .dl-step{display:flex;align-items:center;gap:10px;color:#334155;font-size:12px;font-weight:500;transition:color 0.4s;}
+        .dl-step.active{color:#f1f5f9;}
+        .dl-step.done{color:#10b981;}
+        .dl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#1e2a40;transition:background 0.4s,box-shadow 0.4s;}
+        .dl-step.active .dl-dot{background:#6366f1;box-shadow:0 0 10px rgba(99,102,241,0.7);animation:dlDP 1s ease-in-out infinite;}
+        .dl-step.done .dl-dot{background:#10b981;box-shadow:0 0 8px rgba(16,185,129,0.6);}
+        @keyframes dlDP{0%,100%{opacity:1}50%{opacity:0.35}}
+        .dl-note{color:#1e2a40;font-size:11px;}
+      `;
+      document.head.appendChild(style);
+
+      var div = document.createElement('div');
+      div.id = 'dataLoader';
+      div.innerHTML = '<div class="dl-bg"><div class="dl-grid"></div><div class="dl-glow dl-glow-1"></div><div class="dl-glow dl-glow-2"></div></div>'
+        + '<div class="dl-content">'
+        + '<div class="dl-logo"><img src="https://media.licdn.com/dms/image/v2/D4E0BAQFxFEbQnMyvUA/company-logo_200_200/B4EZbPZusMHoAM-/0/1747236351571/living_cities_logo?e=2147483647&v=beta&t=IlYbc01njHdHRel9QMMx6YAmTpvRnOw7LxwKG1daIvU" alt="Living Cities"/></div>'
+        + '<div class="dl-title">Newark Parcel Intelligence</div>'
+        + '<div class="dl-sub">Loading 41,636 parcel records — this only happens once per browser session</div>'
+        + '<div class="dl-bar-wrap"><div class="dl-bar-track"><div class="dl-bar-fill" id="dlFill"></div></div><div class="dl-pct" id="dlPct">0%</div></div>'
+        + '<div class="dl-steps">'
+        + '<div class="dl-step active" id="dls1"><div class="dl-dot"></div><span>Initializing dashboard engine</span></div>'
+        + '<div class="dl-step" id="dls2"><div class="dl-dot"></div><span>Downloading parcel attributes — shard 1 of 2</span></div>'
+        + '<div class="dl-step" id="dls3"><div class="dl-dot"></div><span>Downloading parcel attributes — shard 2 of 2</span></div>'
+        + '<div class="dl-step" id="dls4"><div class="dl-dot"></div><span>Building search index &amp; filter engine</span></div>'
+        + '<div class="dl-step" id="dls5"><div class="dl-dot"></div><span>Ready — entering dashboard</span></div>'
+        + '</div>'
+        + '<div class="dl-note">Regrid-first · LBCS + census enriched · 41,636 parcels</div>'
+        + '</div>';
+      document.body.appendChild(div);
+
+      // helpers
+      window.__dlP = function(p) {
+        var f = document.getElementById('dlFill');
+        var t = document.getElementById('dlPct');
+        if(f) f.style.width = p + '%';
+        if(t) t.textContent = Math.round(p) + '%';
+      };
+      window.__dlS = function(n) {
+        for(var i=1;i<=5;i++){
+          var e = document.getElementById('dls'+i);
+          if(!e) continue;
+          e.className = 'dl-step' + (i<n?' done':i===n?' active':'');
+        }
+      };
+      window.__dlDone = function() {
+        window.__dlP(100); window.__dlS(5);
+        setTimeout(function(){
+          var el = document.getElementById('dataLoader');
+          if(el){ el.classList.add('dl-hide'); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 800); }
+        }, 700);
+      };
+
+      // smooth creep animation
+      var _cap = 14;
+      window.__dlCap = function(c){ _cap = c; };
+      var _t = setInterval(function(){
+        var f = document.getElementById('dlFill');
+        if(!f){ clearInterval(_t); return; }
+        var cur = parseFloat(f.style.width)||0;
+        if(cur < _cap - 0.5){ var n=Math.min(cur+0.35,_cap-0.3); f.style.width=n+'%'; var p=document.getElementById('dlPct'); if(p) p.textContent=Math.round(n)+'%'; }
+      }, 100);
+
+      window.__dlP(3); window.__dlS(1);
+      setTimeout(function(){ window.__dlP(8); window.__dlS(2); window.__dlCap(44); }, 300);
+    })();
+    </script>
+
+    <!-- DATA + APP — original synchronous load order preserved exactly -->
+    <script src="./data_compact_01.js"></script>
+    <script>if(window.__dlP){window.__dlP(46);window.__dlS(3);window.__dlCap(74);}</script>
+    <script src="./data_compact_02.js"></script>
+    <script>if(window.__dlP){window.__dlP(76);window.__dlS(4);window.__dlCap(93);}</script>
+    <script src="./app.js"></script>
+    <script>if(window.__dlP){window.__dlP(94);window.__dlCap(99);}</script>
+    <script src="./ui-enhancements.js"></script>
+    <script src="./dev-tab.js"></script>
+    <script>
+      // Remove loader after everything is done
+      // app.js fires its own init on enterDashboard click, so we remove
+      // the data loader once scripts are parsed (data is in memory).
+      (function(){
+        if(window.__dlDone) {
+          // Give app.js 200ms to finish its top-level setup, then dismiss
+          setTimeout(function(){ window.__dlDone(); }, 200);
+        }
+      })();
+    </script>
+  </body>
+</html>
