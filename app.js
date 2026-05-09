@@ -50,6 +50,8 @@ let dashboardEntered = false;
 let lastAssistantMatch = null;
 let apiDisabledUntil = 0;
 const USE_REMOTE_AI = false;
+const POINT_RENDER_LIMIT = 8000;
+const POLYGON_RENDER_LIMIT = 1400;
 
 const state = {
   status: "All",
@@ -93,6 +95,8 @@ const CLUSTER_STEP = 0.0045;
 let currentMapRenderMode = "";
 let zoomRenderTimer = null;
 let filterInputSeq = 0;
+let filterVersion = 0;
+let clusterCache = { key: "", clusters: [] };
 let fullLandMax = Infinity;
 let fullImprovementMax = Infinity;
 
@@ -122,6 +126,15 @@ function yearOrUnknown(value) {
   return n > 0 ? String(Math.trunc(n)) : "Unknown";
 }
 
+function dateOrUnknown(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "Unknown";
+  const dateText = text.includes("T") ? text.split("T")[0] : text.split(" ")[0];
+  const parts = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!parts) return text;
+  return `${Number(parts[2])}/${Number(parts[3])}/${parts[1]}`;
+}
+
 function formatCensusId(value) {
   const text = String(value ?? "").trim();
   if (!text) return "";
@@ -141,6 +154,7 @@ function displayRecordValue(key, value) {
   if (["censusTract", "censusBlock", "censusBlockGroup"].includes(key)) return formatCensusId(value);
   if (["lastYearTaxes", "salePrice"].includes(key)) return moneyOrUnknown(value);
   if (key === "yearConstructed") return yearOrUnknown(value);
+  if (["uspsVacancyDate", "saleDate"].includes(key)) return dateOrUnknown(value);
   return value;
 }
 
@@ -150,6 +164,8 @@ function displayRecordLabel(key) {
     landDescription: "Land Description",
     salePrice: "Sale Price",
     yearConstructed: "Year Built",
+    uspsVacancyDate: "USPS Vacancy Date",
+    saleDate: "Sale Date",
     censusZcta: "ZCTA",
   };
   return labels[key] || key;
@@ -190,12 +206,15 @@ function normalizeText(value) {
 }
 
 function featureHaystack(p) {
-  return [
+  if (p.__haystack) return p.__haystack;
+  const haystack = [
     p.id, p.regridPath, p.regridParcel, p.pamsPin, p.block, p.lot, p.address, p.owner,
     p.modOwner, p.ownership, p.ownerSubtype, p.ownerConfidence, p.lbcsFunction, p.lbcsOwnership,
     p.landUse, p.propClass, p.vacancy, p.vacancyMethod, p.zoning, p.ward, p.neighborhood,
     p.censusTract, p.censusBlock, p.censusBlockGroup, p.censusZcta, p.qoz, p.redevelopment,
   ].map(normalizeText).join(" ");
+  Object.defineProperty(p, "__haystack", { value: haystack, enumerable: false, configurable: true });
+  return p.__haystack;
 }
 
 function queryTokens(text) {
@@ -232,13 +251,24 @@ function initFuseSearch() {
   });
 }
 
+function getFuseSearch() {
+  if (!fuseSearch) {
+    fuseSearch = initFuseSearch();
+    if (fuseSearch) {
+      el("aiStatus").textContent = "No-token local assistant active with Fuse.js fuzzy matching. Counts come from the loaded parcel dataset.";
+    }
+  }
+  return fuseSearch;
+}
+
 function fuzzyFeatureMatches(text, source = allFeatures) {
-  if (!fuseSearch) return [];
+  const search = getFuseSearch();
+  if (!search) return [];
   const tokens = queryTokens(text);
   const query = tokens.join(" ") || normalizeText(text);
   if (!query) return [];
   const allowed = source === allFeatures ? null : new Set(source.map((feature) => feature.properties.id));
-  return fuseSearch.search(query, { limit: 600 })
+  return search.search(query, { limit: 600 })
     .filter((result) => result.score <= 0.34 && (!allowed || allowed.has(result.item.properties.id)))
     .map((result) => result.item);
 }
@@ -273,6 +303,8 @@ function localClusterKey(p) {
 }
 
 function currentClusters(minCount = 3) {
+  const cacheKey = `${filterVersion}:${minCount}`;
+  if (clusterCache.key === cacheKey) return clusterCache.clusters;
   const clusters = new Map();
   filtered.forEach(({ properties: p }) => {
     if (p.opportunity < 45 || !p.lat || !p.lon) return;
@@ -297,7 +329,7 @@ function currentClusters(minCount = 3) {
     c.statuses.set(p.vacancy, (c.statuses.get(p.vacancy) || 0) + 1);
     clusters.set(key, c);
   });
-  return [...clusters.values()]
+  const computed = [...clusters.values()]
     .filter((cluster) => cluster.count >= minCount)
     .map((cluster) => {
       const dominantStatus = [...cluster.statuses.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Mixed";
@@ -310,6 +342,8 @@ function currentClusters(minCount = 3) {
       };
     })
     .sort((a, b) => b.count - a.count);
+  clusterCache = { key: cacheKey, clusters: computed };
+  return computed;
 }
 
 function statusFamily(status) {
@@ -376,7 +410,9 @@ function popup(feature) {
         <div class="popup-field"><span>Improved value</span><strong>${money(p.improvementValue)}</strong></div>
         <div class="popup-field"><span>Last year tax</span><strong>${moneyOrUnknown(p.lastYearTaxes)}</strong></div>
         <div class="popup-field"><span>Sale price</span><strong>${moneyOrUnknown(p.salePrice)}</strong></div>
+        <div class="popup-field"><span>Sale date</span><strong>${escapeHtml(dateOrUnknown(p.saleDate))}</strong></div>
         <div class="popup-field"><span>Year built</span><strong>${escapeHtml(yearOrUnknown(p.yearConstructed))}</strong></div>
+        <div class="popup-field"><span>USPS vacancy date</span><strong>${escapeHtml(dateOrUnknown(p.uspsVacancyDate))}</strong></div>
         <div class="popup-field"><span>Census tract</span><strong>${escapeHtml(formatCensusId(p.censusTract) || "Unknown")}</strong></div>
         <div class="popup-field"><span>ZCTA</span><strong>${escapeHtml(formatZcta(p.censusZcta) || "Unknown")}</strong></div>
         <div class="popup-field"><span>Vacancy method</span><strong>${escapeHtml(p.vacancyMethod)}</strong></div>
@@ -400,14 +436,18 @@ function pointStyle(feature) {
 
 function mapRenderMode() {
   if (!map) return "points";
-  if (filtered.length <= 900 || map.getZoom() >= 17) return "polygons";
+  if (filtered.length <= POLYGON_RENDER_LIMIT || (map.getZoom() >= 17 && filtered.length <= POLYGON_RENDER_LIMIT * 2)) return "polygons";
   return "points";
 }
 
-function pointFeatures() {
-  return filtered
-    .filter((feature) => feature.properties.lat && feature.properties.lon)
-    .map((feature) => ({
+function renderedPointFeatures() {
+  const source = filtered.filter((feature) => feature.properties.lat && feature.properties.lon);
+  const selected = selectedIds.size ? source.filter((feature) => selectedIds.has(feature.properties.id)) : [];
+  const base = source.length <= POINT_RENDER_LIMIT
+    ? source
+    : source.filter((_, index) => index % Math.ceil(source.length / POINT_RENDER_LIMIT) === 0);
+  const unique = new Map([...base, ...selected].map((feature) => [feature.properties.id, feature]));
+  return [...unique.values()].map((feature) => ({
       type: "Feature",
       geometry: {
         type: "Point",
@@ -481,6 +521,7 @@ function clearExternalFeatureFilter() {
 }
 
 function applyFilters() {
+  filterVersion += 1;
   const query = normalizeText(state.search);
   const scopeIds = externalFilterIds;
   const scoreMin = Number(state.scoreMin || 0);
@@ -602,13 +643,13 @@ function renderMap() {
   el("mapLoading").classList.remove("gone");
   el("mapLoading").innerHTML = mode === "polygons"
     ? `<div class="spinner"></div><div class="loading-title">Rendering parcel polygons</div><div class="loading-sub">Zoomed detail mode</div>`
-    : `<div class="spinner"></div><div class="loading-title">Rendering fast parcel points</div><div class="loading-sub">Zoom in or filter to see full polygons</div>`;
+    : `<div class="spinner"></div><div class="loading-title">Rendering fast parcel points</div><div class="loading-sub">${filtered.length > POINT_RENDER_LIMIT ? `Showing ${fmt(POINT_RENDER_LIMIT)} sampled points from ${fmt(filtered.length)} parcels. Filter or zoom for more detail.` : "Zoom in or filter to see full polygons"}</div>`;
 
   if (mode === "points") {
     requestAnimationFrame(() => {
       if (renderSeq !== mapRenderSeq) return;
       if (parcelLayer) parcelLayer.remove();
-      parcelLayer = L.geoJSON(pointFeatures(), {
+      parcelLayer = L.geoJSON(renderedPointFeatures(), {
         renderer: L.canvas({ padding: 0.35 }),
         pointToLayer(feature, latlng) {
           return L.circleMarker(latlng, pointStyle(feature));
@@ -683,6 +724,13 @@ function renderClusters() {
 }
 
 function fitVisible() {
+  const coords = filtered
+    .map((feature) => [feature.properties.lat, feature.properties.lon])
+    .filter(([lat, lon]) => Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)));
+  if (coords.length) {
+    map.fitBounds(L.latLngBounds(coords).pad(0.04), { animate: false });
+    return;
+  }
   if (!parcelLayer) return;
   const bounds = parcelLayer.getBounds();
   if (bounds.isValid()) map.fitBounds(bounds.pad(0.04), { animate: false });
@@ -1425,7 +1473,7 @@ function selectedFeatures() {
 const exportColumns = [
   "id", "regridPath", "regridParcel", "block", "lot", "address", "owner", "ownership",
   "ownerSubtype", "ownerConfidence", "lbcsFunction", "lbcsOwnership", "landUse", "vacancy",
-  "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "yearConstructed", "lotAcres", "landDescription", "zoning",
+  "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "saleDate", "yearConstructed", "uspsVacancyDate", "lotAcres", "landDescription", "zoning",
   "ward", "neighborhood", "latitude", "longitude", "censusTract", "censusBlock",
   "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
   "housingAffordabilityIndex", "opportunity"
@@ -1471,7 +1519,7 @@ function openParcelRecord(id) {
   el("selectRecordParcel").textContent = selectedIds.has(props.id) ? "Remove selection" : "Select parcel";
   const preferred = [
     "id", "regridPath", "regridParcel", "address", "owner", "ownership", "ownerSubtype", "ownerConfidence",
-    "lbcsFunction", "lbcsOwnership", "landUse", "vacancy", "vacancyMethod", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "yearConstructed", "landDescription",
+    "lbcsFunction", "lbcsOwnership", "landUse", "vacancy", "vacancyMethod", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "saleDate", "yearConstructed", "uspsVacancyDate", "landDescription",
     "assessed", "netValue", "lotAcres", "zoning", "ward", "neighborhood", "latitude", "longitude",
     "censusTract", "censusBlock", "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
     "populationGrowthPast5", "populationGrowthNext5", "housingAffordabilityIndex", "qoz", "redevelopment", "opportunity"
@@ -2125,7 +2173,7 @@ function exportCsvOld() {
   const columns = [
     "id", "regridPath", "regridParcel", "block", "lot", "address", "owner", "ownership",
     "ownerSubtype", "ownerConfidence", "lbcsFunction", "lbcsOwnership", "landUse", "vacancy",
-    "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "yearConstructed", "lotAcres", "landDescription", "zoning",
+    "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "saleDate", "yearConstructed", "uspsVacancyDate", "lotAcres", "landDescription", "zoning",
     "ward", "neighborhood", "latitude", "longitude", "censusTract", "censusBlock",
     "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
     "housingAffordabilityIndex", "opportunity"
@@ -2327,9 +2375,8 @@ el("aiForm").addEventListener("submit", (event) => {
 document.querySelectorAll("[data-prompt]").forEach((button) => {
   button.addEventListener("click", () => askAssistant(button.dataset.prompt));
 });
-fuseSearch = initFuseSearch();
-el("aiStatus").textContent = fuseSearch
-  ? "No-token local assistant active with Fuse.js fuzzy matching. Counts come from the loaded parcel dataset."
+el("aiStatus").textContent = window.Fuse
+  ? "No-token local assistant active. Exact answers load immediately; fuzzy matching builds only when needed."
   : "No-token local assistant active. Exact answers come from the loaded parcel dataset.";
 applyFilters();
 

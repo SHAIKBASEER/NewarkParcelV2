@@ -63,5 +63,23 @@
         "yearConstructed": 0
       }
     }
+  },
+  "regrid_dates_added": {
+    "matched_rows": 42024,
+    "changed_rows": 41636,
+    "fields": {
+      "uspsVacancyDate": "REGRID_usps_vacancy_date",
+      "saleDate": "REGRID_saledate"
+    },
+    "samples": {
+      "0714_1818_9": {
+        "uspsVacancyDate": "2026-04-01T00:00:00",
+        "saleDate": "2017-12-06T00:00:00"
+      },
+      "0714_3079_61": {
+        "uspsVacancyDate": "",
+        "saleDate": ""
+      }
+    }
   }
 }
