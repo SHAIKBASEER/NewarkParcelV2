@@ -112,6 +112,36 @@ function money(value) {
   return `$${fmt(n)}`;
 }
 
+function formatCensusId(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  if (/^\d+\.0$/.test(text)) return text.slice(0, -2);
+  if (/^\d+(?:\.\d+)?e[+-]?\d+$/i.test(text)) return String(Math.trunc(Number(text)));
+  return text;
+}
+
+function formatZcta(value) {
+  const text = formatCensusId(value);
+  if (!text) return "";
+  return /^\d{1,4}$/.test(text) ? text.padStart(5, "0") : text;
+}
+
+function displayRecordValue(key, value) {
+  if (key === "censusZcta") return formatZcta(value);
+  if (["censusTract", "censusBlock", "censusBlockGroup"].includes(key)) return formatCensusId(value);
+  if (key === "lastYearTaxes") return money(value);
+  return value;
+}
+
+function displayRecordLabel(key) {
+  const labels = {
+    lastYearTaxes: "LAST_YR_TX",
+    landDescription: "LAND_DESC",
+    censusZcta: "ZCTA",
+  };
+  return labels[key] || key;
+}
+
 function acres(value) {
   const n = Number(value || 0);
   return n >= 10 ? n.toFixed(1) : n.toFixed(2);
@@ -204,6 +234,16 @@ function countBy(features, key) {
   const counts = new Map();
   features.forEach((feature) => {
     const value = feature.properties[key] || "Unknown";
+    counts.set(value, (counts.get(value) || 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function countByFormatted(features, key, formatter) {
+  const counts = new Map();
+  features.forEach((feature) => {
+    const formatted = formatter(feature.properties[key]);
+    const value = formatted || "Unknown";
     counts.set(value, (counts.get(value) || 0) + 1);
   });
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
@@ -317,11 +357,13 @@ function popup(feature) {
         <div class="popup-field"><span>Geography</span><strong>${escapeHtml(p.neighborhood)}</strong></div>
         <div class="popup-field"><span>Lat / Long</span><strong>${p.latitude}, ${p.longitude}</strong></div>
         <div class="popup-field"><span>Lot size</span><strong>${acres(p.lotAcres)} ac</strong></div>
+        <div class="popup-field"><span>Land description</span><strong>${escapeHtml(p.landDescription || "Unknown")}</strong></div>
         <div class="popup-field"><span>Assessed</span><strong>${money(p.assessed)}</strong></div>
         <div class="popup-field"><span>Land value</span><strong>${money(p.landValue)}</strong></div>
         <div class="popup-field"><span>Improved value</span><strong>${money(p.improvementValue)}</strong></div>
-        <div class="popup-field"><span>Census tract</span><strong>${escapeHtml(p.censusTract || "Unknown")}</strong></div>
-        <div class="popup-field"><span>ZCTA</span><strong>${escapeHtml(p.censusZcta || "Unknown")}</strong></div>
+        <div class="popup-field"><span>Last year tax</span><strong>${money(p.lastYearTaxes)}</strong></div>
+        <div class="popup-field"><span>Census tract</span><strong>${escapeHtml(formatCensusId(p.censusTract) || "Unknown")}</strong></div>
+        <div class="popup-field"><span>ZCTA</span><strong>${escapeHtml(formatZcta(p.censusZcta) || "Unknown")}</strong></div>
         <div class="popup-field"><span>Vacancy method</span><strong>${escapeHtml(p.vacancyMethod)}</strong></div>
         <div class="popup-field"><span>Value source</span><strong>${escapeHtml(p.assessedSource)}</strong></div>
       </div>
@@ -380,7 +422,7 @@ function matchesDrilldown(p) {
     return !extra?.status || planningStatus(p) === extra.status;
   }
   if (type === "landUse") return p.landUse === value;
-  if (type === "zcta") return String(p.censusZcta || "") === String(value);
+  if (type === "zcta") return formatZcta(p.censusZcta) === formatZcta(value);
   if (type === "parcel") return p.id === value || p.regridParcel === value;
   if (type === "valuePositive") {
     return value === "Land value" ? Number(p.landValue || 0) > 0 : Number(p.improvementValue || 0) > 0;
@@ -472,6 +514,12 @@ function initMap() {
   });
   document.querySelectorAll("[data-layer]").forEach((button) => {
     button.addEventListener("click", () => switchBaseLayer(button.dataset.layer));
+  });
+  document.querySelectorAll("[data-theme]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.body.classList.toggle("theme-glass", button.dataset.theme === "glass");
+      document.querySelectorAll("[data-theme]").forEach((themeButton) => themeButton.classList.toggle("active", themeButton === button));
+    });
   });
   map.on("zoomend", () => {
     if (!dashboardEntered || state.tab !== "map") return;
@@ -672,7 +720,7 @@ function renderTreemap(containerId, entries) {
     const pct = (value / total) * 100;
     return `
       <div class="tree-cell" data-drill-type="zcta" data-drill-value="${escapeHtml(label)}" title="Double-click to filter ZCTA ${escapeHtml(String(label))}" style="--grow:${Math.max(8, pct)};background:${colors[idx % colors.length]};--delay:${idx * 45}ms">
-        <strong>${escapeHtml(String(label).replace(/\.0$/, ""))}</strong>
+        <strong>${escapeHtml(formatZcta(label))}</strong>
         <span>${fmt(value)}</span>
         <small>${pct.toFixed(0)}%</small>
       </div>
@@ -1112,7 +1160,7 @@ function renderAll() {
   renderBars("landUseBars", countBy(filtered, "landUse").slice(0, 7), "#0a8f60", filtered.length, "landUse");
   renderBars("lbcsBars", countBy(filtered, "lbcsFunction").filter(([label]) => label !== "Unknown").slice(0, 7), "#2563eb", filtered.length, "lbcsFunction");
   renderProgressChart("landUseProgress", countBy(filtered, "landUse").slice(0, 7), ["#3478f6", "#8b5cf6", "#f59e0b", "#06a6bf", "#10b981", "#c0334e", "#64748b"]);
-  renderTreemap("zctaTreemap", countBy(filtered.filter((f) => f.properties.censusZcta), "censusZcta").slice(0, 10));
+  renderTreemap("zctaTreemap", countByFormatted(filtered.filter((f) => f.properties.censusZcta), "censusZcta", formatZcta).slice(0, 10));
   renderParcelList();
   renderLegend();
   if (state.tab === "charts") renderCharts();
@@ -1356,7 +1404,7 @@ function selectedFeatures() {
 const exportColumns = [
   "id", "regridPath", "regridParcel", "block", "lot", "address", "owner", "ownership",
   "ownerSubtype", "ownerConfidence", "lbcsFunction", "lbcsOwnership", "landUse", "vacancy",
-  "vacancyMethod", "assessed", "landValue", "improvementValue", "lotAcres", "zoning",
+  "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "lotAcres", "landDescription", "zoning",
   "ward", "neighborhood", "latitude", "longitude", "censusTract", "censusBlock",
   "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
   "housingAffordabilityIndex", "opportunity"
@@ -1402,7 +1450,7 @@ function openParcelRecord(id) {
   el("selectRecordParcel").textContent = selectedIds.has(props.id) ? "Remove selection" : "Select parcel";
   const preferred = [
     "id", "regridPath", "regridParcel", "address", "owner", "ownership", "ownerSubtype", "ownerConfidence",
-    "lbcsFunction", "lbcsOwnership", "landUse", "vacancy", "vacancyMethod", "landValue", "improvementValue",
+    "lbcsFunction", "lbcsOwnership", "landUse", "vacancy", "vacancyMethod", "landValue", "improvementValue", "lastYearTaxes", "landDescription",
     "assessed", "netValue", "lotAcres", "zoning", "ward", "neighborhood", "latitude", "longitude",
     "censusTract", "censusBlock", "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
     "populationGrowthPast5", "populationGrowthNext5", "housingAffordabilityIndex", "qoz", "redevelopment", "opportunity"
@@ -1410,8 +1458,8 @@ function openParcelRecord(id) {
   const keys = [...new Set([...preferred, ...Object.keys(props)])].filter((key) => props[key] !== "" && props[key] !== null && props[key] !== undefined);
   el("recordGrid").innerHTML = keys.map((key) => `
     <div class="record-field">
-      <span>${escapeHtml(key)}</span>
-      <strong>${escapeHtml(props[key])}</strong>
+      <span>${escapeHtml(displayRecordLabel(key))}</span>
+      <strong>${escapeHtml(displayRecordValue(key, props[key]))}</strong>
     </div>
   `).join("");
   el("parcelModal").classList.remove("gone");
@@ -1963,7 +2011,8 @@ function localAiAnswer(text) {
     return exactBreakdown("lbcsFunction", "LBCS function", 8, filtered.filter((f) => f.properties.lbcsFunction !== "Unknown"));
   }
   if (q.includes("zcta") || q.includes("zip")) {
-    return exactBreakdown("censusZcta", "Census ZCTA", 10, filtered.filter((f) => f.properties.censusZcta));
+    const entries = countByFormatted(filtered.filter((f) => f.properties.censusZcta), "censusZcta", formatZcta).slice(0, 10);
+    return entries.length ? "Census ZCTA: " + entries.map(([name, count]) => `${name} ${fmt(count)}`).join("; ") + "." : "No Census ZCTA records found in the current view.";
   }
   if (q.includes("tract") || q.includes("census")) {
     return exactBreakdown("censusTract", "Census tract", 10, filtered.filter((f) => f.properties.censusTract));
@@ -2055,7 +2104,7 @@ function exportCsvOld() {
   const columns = [
     "id", "regridPath", "regridParcel", "block", "lot", "address", "owner", "ownership",
     "ownerSubtype", "ownerConfidence", "lbcsFunction", "lbcsOwnership", "landUse", "vacancy",
-    "vacancyMethod", "assessed", "landValue", "improvementValue", "lotAcres", "zoning",
+    "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "lotAcres", "landDescription", "zoning",
     "ward", "neighborhood", "latitude", "longitude", "censusTract", "censusBlock",
     "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
     "housingAffordabilityIndex", "opportunity"

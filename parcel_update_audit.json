@@ -28,5 +28,10 @@
     "0714_651_11",
     "0714_651_10",
     "0714_651_8"
-  ]
+  ],
+  "schema_added": [
+    "lastYearTaxes",
+    "landDescription"
+  ],
+  "extra_fields_filled_for_updated_entries": 388
 }
