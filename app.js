@@ -129,14 +129,16 @@ function formatZcta(value) {
 function displayRecordValue(key, value) {
   if (key === "censusZcta") return formatZcta(value);
   if (["censusTract", "censusBlock", "censusBlockGroup"].includes(key)) return formatCensusId(value);
-  if (key === "lastYearTaxes") return money(value);
+  if (["lastYearTaxes", "salePrice"].includes(key)) return money(value);
   return value;
 }
 
 function displayRecordLabel(key) {
   const labels = {
-    lastYearTaxes: "LAST_YR_TX",
-    landDescription: "LAND_DESC",
+    lastYearTaxes: "Last Year Tax",
+    landDescription: "Land Description",
+    salePrice: "Sale Price",
+    yearConstructed: "Year Built",
     censusZcta: "ZCTA",
   };
   return labels[key] || key;
@@ -362,6 +364,8 @@ function popup(feature) {
         <div class="popup-field"><span>Land value</span><strong>${money(p.landValue)}</strong></div>
         <div class="popup-field"><span>Improved value</span><strong>${money(p.improvementValue)}</strong></div>
         <div class="popup-field"><span>Last year tax</span><strong>${money(p.lastYearTaxes)}</strong></div>
+        <div class="popup-field"><span>Sale price</span><strong>${money(p.salePrice)}</strong></div>
+        <div class="popup-field"><span>Year built</span><strong>${escapeHtml(p.yearConstructed || "Unknown")}</strong></div>
         <div class="popup-field"><span>Census tract</span><strong>${escapeHtml(formatCensusId(p.censusTract) || "Unknown")}</strong></div>
         <div class="popup-field"><span>ZCTA</span><strong>${escapeHtml(formatZcta(p.censusZcta) || "Unknown")}</strong></div>
         <div class="popup-field"><span>Vacancy method</span><strong>${escapeHtml(p.vacancyMethod)}</strong></div>
@@ -1404,7 +1408,7 @@ function selectedFeatures() {
 const exportColumns = [
   "id", "regridPath", "regridParcel", "block", "lot", "address", "owner", "ownership",
   "ownerSubtype", "ownerConfidence", "lbcsFunction", "lbcsOwnership", "landUse", "vacancy",
-  "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "lotAcres", "landDescription", "zoning",
+  "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "yearConstructed", "lotAcres", "landDescription", "zoning",
   "ward", "neighborhood", "latitude", "longitude", "censusTract", "censusBlock",
   "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
   "housingAffordabilityIndex", "opportunity"
@@ -1450,7 +1454,7 @@ function openParcelRecord(id) {
   el("selectRecordParcel").textContent = selectedIds.has(props.id) ? "Remove selection" : "Select parcel";
   const preferred = [
     "id", "regridPath", "regridParcel", "address", "owner", "ownership", "ownerSubtype", "ownerConfidence",
-    "lbcsFunction", "lbcsOwnership", "landUse", "vacancy", "vacancyMethod", "landValue", "improvementValue", "lastYearTaxes", "landDescription",
+    "lbcsFunction", "lbcsOwnership", "landUse", "vacancy", "vacancyMethod", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "yearConstructed", "landDescription",
     "assessed", "netValue", "lotAcres", "zoning", "ward", "neighborhood", "latitude", "longitude",
     "censusTract", "censusBlock", "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
     "populationGrowthPast5", "populationGrowthNext5", "housingAffordabilityIndex", "qoz", "redevelopment", "opportunity"
@@ -2104,7 +2108,7 @@ function exportCsvOld() {
   const columns = [
     "id", "regridPath", "regridParcel", "block", "lot", "address", "owner", "ownership",
     "ownerSubtype", "ownerConfidence", "lbcsFunction", "lbcsOwnership", "landUse", "vacancy",
-    "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "lotAcres", "landDescription", "zoning",
+    "vacancyMethod", "assessed", "landValue", "improvementValue", "lastYearTaxes", "salePrice", "yearConstructed", "lotAcres", "landDescription", "zoning",
     "ward", "neighborhood", "latitude", "longitude", "censusTract", "censusBlock",
     "censusBlockGroup", "censusZcta", "medianHouseholdIncome", "populationDensity",
     "housingAffordabilityIndex", "opportunity"

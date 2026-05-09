@@ -33,5 +33,11 @@
     "lastYearTaxes",
     "landDescription"
   ],
-  "extra_fields_filled_for_updated_entries": 388
+  "extra_fields_filled_for_updated_entries": 388,
+  "schema_added_or_confirmed": [
+    "lastYearTaxes",
+    "landDescription",
+    "salePrice",
+    "yearConstructed"
+  ]
 }
