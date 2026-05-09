@@ -95,6 +95,20 @@
       '--good':'#10b981','--good-soft':'rgba(16,185,129,0.12)',
       '--opp':'#f59e0b','--opp-soft':'rgba(245,158,11,0.1)',
     },
+    'glass': {
+      label: 'Glassmorphism', swatch: '#38bdf8',
+      '--bg':'#07111f','--bg-2':'rgba(8,18,33,0.58)','--bg-3':'rgba(15,23,42,0.68)',
+      '--surface':'rgba(255,255,255,0.12)','--surface-2':'rgba(255,255,255,0.16)','--surface-3':'rgba(255,255,255,0.20)',
+      '--border':'rgba(255,255,255,0.18)','--border-2':'rgba(255,255,255,0.28)',
+      '--border-3':'rgba(255,255,255,0.14)',
+      '--text':'#f8fafc','--text-2':'#dbeafe','--muted':'#93c5fd','--soft':'#7dd3fc',
+      '--indigo':'#38bdf8','--indigo-2':'#22d3ee','--indigo-glow':'rgba(56,189,248,0.28)',
+      '--violet':'#a78bfa','--emerald':'#10b981','--crimson':'#fb7185','--amber':'#fbbf24','--sky':'#38bdf8',
+      '--vac':'#fb7185','--vac-soft':'rgba(251,113,133,0.14)',
+      '--under':'#fbbf24','--under-soft':'rgba(251,191,36,0.14)',
+      '--good':'#34d399','--good-soft':'rgba(52,211,153,0.14)',
+      '--opp':'#38bdf8','--opp-soft':'rgba(56,189,248,0.14)',
+    },
     'light': {
       label: 'Light Mode', swatch: '#6366f1',
       '--bg':'#f8fafc','--bg-2':'#f1f5f9','--bg-3':'#e2e8f0',
@@ -118,12 +132,17 @@
     if (!t) return;
     currentTheme = name;
     localStorage.setItem('npi-theme', name);
+    document.body.classList.toggle('theme-glass', name === 'glass');
     const root = document.documentElement;
     Object.entries(t).forEach(([k,v]) => { if (k.startsWith('--')) root.style.setProperty(k,v); });
     qsa('.theme-opt-btn').forEach(b => {
       b.style.outline = b.dataset.theme === name ? '2px solid var(--indigo)' : 'none';
     });
+    qsa('.layer-option[data-theme]').forEach(b => {
+      b.classList.toggle('active', name === 'glass' ? b.dataset.theme === 'glass' : b.dataset.theme === 'default');
+    });
   }
+  window.npiApplyTheme = applyTheme;
 
   function injectThemeSwitcher() {
     // Button in topbar

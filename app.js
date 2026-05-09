@@ -112,6 +112,16 @@ function money(value) {
   return `$${fmt(n)}`;
 }
 
+function moneyOrUnknown(value) {
+  if (value === "" || value === null || value === undefined) return "Unknown";
+  return money(value);
+}
+
+function yearOrUnknown(value) {
+  const n = Number(value);
+  return n > 0 ? String(Math.trunc(n)) : "Unknown";
+}
+
 function formatCensusId(value) {
   const text = String(value ?? "").trim();
   if (!text) return "";
@@ -129,7 +139,8 @@ function formatZcta(value) {
 function displayRecordValue(key, value) {
   if (key === "censusZcta") return formatZcta(value);
   if (["censusTract", "censusBlock", "censusBlockGroup"].includes(key)) return formatCensusId(value);
-  if (["lastYearTaxes", "salePrice"].includes(key)) return money(value);
+  if (["lastYearTaxes", "salePrice"].includes(key)) return moneyOrUnknown(value);
+  if (key === "yearConstructed") return yearOrUnknown(value);
   return value;
 }
 
@@ -363,9 +374,9 @@ function popup(feature) {
         <div class="popup-field"><span>Assessed</span><strong>${money(p.assessed)}</strong></div>
         <div class="popup-field"><span>Land value</span><strong>${money(p.landValue)}</strong></div>
         <div class="popup-field"><span>Improved value</span><strong>${money(p.improvementValue)}</strong></div>
-        <div class="popup-field"><span>Last year tax</span><strong>${money(p.lastYearTaxes)}</strong></div>
-        <div class="popup-field"><span>Sale price</span><strong>${money(p.salePrice)}</strong></div>
-        <div class="popup-field"><span>Year built</span><strong>${escapeHtml(p.yearConstructed || "Unknown")}</strong></div>
+        <div class="popup-field"><span>Last year tax</span><strong>${moneyOrUnknown(p.lastYearTaxes)}</strong></div>
+        <div class="popup-field"><span>Sale price</span><strong>${moneyOrUnknown(p.salePrice)}</strong></div>
+        <div class="popup-field"><span>Year built</span><strong>${escapeHtml(yearOrUnknown(p.yearConstructed))}</strong></div>
         <div class="popup-field"><span>Census tract</span><strong>${escapeHtml(formatCensusId(p.censusTract) || "Unknown")}</strong></div>
         <div class="popup-field"><span>ZCTA</span><strong>${escapeHtml(formatZcta(p.censusZcta) || "Unknown")}</strong></div>
         <div class="popup-field"><span>Vacancy method</span><strong>${escapeHtml(p.vacancyMethod)}</strong></div>
@@ -521,8 +532,14 @@ function initMap() {
   });
   document.querySelectorAll("[data-theme]").forEach((button) => {
     button.addEventListener("click", () => {
-      document.body.classList.toggle("theme-glass", button.dataset.theme === "glass");
-      document.querySelectorAll("[data-theme]").forEach((themeButton) => themeButton.classList.toggle("active", themeButton === button));
+      const themeName = button.dataset.theme === "glass" ? "glass" : "dark-indigo";
+      if (window.npiApplyTheme) {
+        window.npiApplyTheme(themeName);
+      } else {
+        document.body.classList.toggle("theme-glass", themeName === "glass");
+        localStorage.setItem("npi-theme", themeName);
+        document.querySelectorAll("[data-theme]").forEach((themeButton) => themeButton.classList.toggle("active", themeButton === button));
+      }
     });
   });
   map.on("zoomend", () => {

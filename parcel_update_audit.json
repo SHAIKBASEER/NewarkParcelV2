@@ -39,5 +39,29 @@
     "landDescription",
     "salePrice",
     "yearConstructed"
-  ]
+  ],
+  "all_parcel_extra_fields_refilled_from_gpkg": {
+    "matched_rows": 42024,
+    "changed_rows": 41638,
+    "fields": {
+      "lastYearTaxes": "LAST_YR_TX",
+      "landDescription": "LAND_DESC",
+      "salePrice": "SALE_PRICE",
+      "yearConstructed": "YR_CONSTR"
+    },
+    "samples": {
+      "0714_1818_9": {
+        "lastYearTaxes": 7708.68,
+        "landDescription": "25X100",
+        "salePrice": 245000,
+        "yearConstructed": 2006
+      },
+      "0714_3079_61": {
+        "lastYearTaxes": 1121.9,
+        "landDescription": "76.5X107 AVG.",
+        "salePrice": 81855,
+        "yearConstructed": 0
+      }
+    }
+  }
 }
